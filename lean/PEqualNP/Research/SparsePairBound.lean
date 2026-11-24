@@ -398,4 +398,3 @@ theorem bound (L : Submodule ℂ M) (hY : Y ∈ L) (hZ : Z ∈ L)
   omega
 
 end PEqualNP.Research.SparsePairBound
-
