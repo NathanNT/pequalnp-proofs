@@ -1,0 +1,10 @@
+(∀ (m : ℕ) (X : Submodule (ZMod 5) (Fin m → ZMod 5)),
+      Module.finrank (ZMod 5) X = 2 →
+      (∀ x ∈ X, ∑ i, x i ^ 2 = 0) → (∀ x ∈ X, ∑ i, x i ^ 4 = 0) →
+      10 ≤ m ∧ (m = 10 → ∃ u v : Fin m → ZMod 5,
+        (Finset.univ.filter fun i => u i ≠ 0).card = 5 ∧
+        (Finset.univ.filter fun i => v i ≠ 0).card = 5 ∧
+        (∀ i, (u i ^ 2 = 1 ∧ v i = 0) ∨ (u i = 0 ∧ v i ^ 2 = 1)) ∧
+        ∀ z, z ∈ X ↔ ∃ a b : ZMod 5, z = a • u + b • v)) ∧
+    (∃ X : Submodule (ZMod 5) (Fin 10 → ZMod 5), Module.finrank (ZMod 5) X = 2 ∧
+      ∀ x ∈ X, (∑ i, x i ^ 2) = 0 ∧ (∑ i, x i ^ 4) = 0)
