@@ -1,21 +1,23 @@
-# Circuits monotones et graphes d’incidence
+# Boundary tests for monotone graph circuits
 
-Les six propositions Lean de cette revue sont des résultats de recherche locaux. Les bornes générales de 25 portes sur Heawood et de 64 portes sur le plan d’ordre trois restent ouvertes.
+## Heawood with one exceptional edge
 
-| Cible étudiée | Résultat vérifié |
-|---|---|
-| L-meta-3754 | Pour chaque porte d’un circuit AND/OR binaire minimal, tout fil antérieur échoue à au moins un des deux tests de remplacement. Il manque un vrai sur une arête où la porte est vraie, ou il introduit un vrai sur un ensemble indépendant maximal où elle est fausse. Le résultat vaut pour tout graphe simple fini. |
-| L-meta-4781 | Une bijection identifie les séparateurs admissibles sur 14 bits aux fonctions monotones sur le cycle résiduel à 8 sommets qui rejettent zéro et acceptent chaque entrée contenant une arête. Une fonction déterminée par quatre coordonnées est un OR sur une classe alternée. |
-| L-meta-4051 | Trois lemmes portent sur la sensibilité après fixation de variables, les lectures directes de variables dans un circuit et la possibilité de décoder une fonction d’arête depuis des OR de paires. Le témoin de McGee montre la limite d’un argument par nombre de lectures seul. |
-| L-meta-1692 | Un calcul exhaustif sur le plan d’ordre trois identifie les 10 362 entrées négatives forcées et les 28 368 entrées sans incidence individuellement libres. Trois points alignés donnent un contre-exemple à l’exactitude forcée sur toutes les entrées. |
+In L-meta-4781 the exceptional edge is (0,7). A separator must accept an input containing any other edge, reject every independent set and reject the exceptional pair itself. Its 46 undetermined truth-table entries correspond to the nonempty independent sets of the residual cycle (2,12,5,9,6,11,4,13,2).
 
-Pour Heawood, le programme dénombre 14 514 289 séparateurs et 919 855 classes sous les seize symétries de l’arête distinguée. Les 58 tests comprennent vingt arêtes obligatoires, 37 ensembles indépendants maximaux et l’arête distinguée. La recherche générale en 24 portes a atteint 180 secondes sans verdict. Les neuf fenêtres testées ont atteint dix-huit secondes chacune. Le générateur utilise la définition `enc2` du projet.
+Two Lean theorems identify these separators with the monotone functions on eight bits that reject zero and accept every input containing a cycle edge, and classify their minimum coordinate supports. A determining set needs at least four coordinates. At equality it is an alternating vertex class and the function is the OR of those four coordinates. The exhaustive Python count gives 14,514,289 separators in 919,855 orbits under the stabilizer of the distinguished edge.
 
-Pour L-meta-3754, sur le chemin à quatre sommets (a,b,c,d), les trois clauses (a ∨  c), (b ∨  d) et (b ∨  c) donnent un circuit de cinq portes en prenant leur conjonction. Le premier AND de ces trois clauses, appliqué aux deux premières, est vrai sur la paire indépendante ({a,d}). Le circuit est au point fixe du relèvement. Il passe les tests de comparaison avec tout fil antérieur. La même fonction se calcule en quatre portes par ((b ∧ (a ∨  c)) ∨ (c ∧  d)). Le test de comparaison seul ne suffit donc pas à conclure L-meta-3754. Les fichiers JSON indiquent les résultats et les délais des recherches SAT sur de petits graphes.
+Monotonicity reduces verification of a candidate circuit to 58 rows: the 20 required edge pairs, the 37 maximal independent sets and the exceptional pair. The 24-gate SAT run reached its 180-second cutoff. All nine fixed-window runs reached their 18-second cutoffs. The 25-gate lower bound remains open here.
 
-## Reproduction
+## Minimum circuits and direct input readers
 
-Compiler Mathlib et le checker du projet avec les versions épinglées. Depuis ce dossier, exécuter `python verify.py <racine-du-checkout>/lean <racine-de-la-toolchain-Lean-4.36.0>`. Les six fichiers de signature sont lus séparément. Le module de dérivation pour L-meta-3754 utilise le module upstream L-meta-2668. La copie du fork est identique au blob `0722c4a5b8473d5ef035bba21f5c4786febb54c5`. [Source de la dépendance upstream](https://github.com/open-goat/pequalnp-proofs/blob/aeef32c907d2bd344ab16172b8baadd5081b0582/lean/PEqualNP/Outside/L_meta_2668.lean).
+For L-meta-3754, deleting a gate and redirecting its uses gives a necessary condition for minimum size. No earlier wire covers all edge-pair rows where the gate is true while introducing no new true rows on maximal independent sets. This holds for any finite simple graph in the binary monotone model. On the path a–b–c–d, form the AND of (a OR c) and (b OR d), and then AND the result with (b OR c). The first AND accepts the independent pair {a,d}. This five-gate circuit is lift-fixed and passes every earlier-wire test. The same edge function has a four-gate implementation. The example separates the necessary condition from global minimality. The small-graph solver results, including timeouts, are in [3754](3754/).
 
-Les scripts de graphes utilisent Python 3 et NetworkX. Les expériences du plan d’ordre trois utilisent la bibliothèque standard. Les recherches SAT de cette revue ont utilisé le CaDiCaL livré avec Lean 4.36.0 sur Windows. Le protocole des scripts SAT suppose cette installation.
+For L-meta-4051, three checked lemmas treat sensitivity under restrictions, direct input readers and exact recovery from a layer of pairwise ORs. The scripts include a McGee graph example in which every input has two OR readers and a decoder exists. The size of the decoder remains unrestricted.
 
+For L-meta-1692 the exhaustive order-three plane calculation gives 10,362 forced negative rows and 28,368 individually optional nonincident rows. A collinear triple already gives a separator differing from incidence. The 64-gate bound remains open here.
+
+## Reproduce
+
+With the pinned Mathlib and project checker built, run `python verify.py <checkout>/lean <Lean-4.36.0-toolchain>` from this directory. It checks six separate statements. The gate-deletion argument imports the upstream L-meta-2668 module, included at blob `0722c4a5b8473d5ef035bba21f5c4786febb54c5`. [Upstream dependency](https://github.com/open-goat/pequalnp-proofs/blob/aeef32c907d2bd344ab16172b8baadd5081b0582/lean/PEqualNP/Outside/L_meta_2668.lean).
+
+Graph experiments use Python 3 and NetworkX. The order-three classifier uses the Python standard library. The SAT scripts target the CaDiCaL binary shipped with Lean 4.36.0 on Windows.
