@@ -1,0 +1,6 @@
+∃ Y Z D : Matrix (Fin 4) (Fin 4) ℂ,
+  (∀ i j, Y i j ≠ 0 ↔ i = 0 ∨ i = 1) ∧
+  (∀ i j, Z i j ≠ 0 ↔ j = 2 ∨ j = 3) ∧
+  (∀ t u v : ℂ, t • Y + u • Z + v • D=0 → t=0 ∧ u=0 ∧ v=0) ∧
+  ∀ t u v : ℂ, Matrix.permanent (Matrix.of fun (i j : Fin 4) =>
+    (if i=j then (2 : ℂ) else 1)+t*Y i j+u*Z i j+v*D i j)=65

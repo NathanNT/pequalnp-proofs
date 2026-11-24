@@ -1,0 +1,5 @@
+∀ (L : Submodule ℂ (Matrix (Fin 4) (Fin 4) ℂ)) (B : Matrix (Fin 4) (Fin 4) ℂ),
+  Module.finrank ℂ L = 6 →
+  (∀ X ∈ L, (B+X).permanent ≠ 0) →
+  (∀ i j : Fin 4, i≠j → Function.Injective (fun X : L => (X.val i,X.val j))) →
+  ∃ σ : Equiv.Perm (Fin 4), ∀ X ∈ L, ∀ i, X i (σ i)=0
