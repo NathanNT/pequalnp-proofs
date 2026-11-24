@@ -1,0 +1,5 @@
+∀ D : Matrix (Fin 4) (Fin 4) ℂ, D.IsSymm →
+  let H := fun (x y : ℂ) => Matrix.of ![![0, x, y, -x-y],
+    ![x, 0, 0, 0], ![y, 0, 0, 0], ![-x-y, 0, 0, 0]]
+  (∀ x y t : ℂ, (Matrix.of fun i j => 1 + H x y i j + t * D i j).permanent = 24) ↔
+    D = H (D 0 1) (D 0 2)

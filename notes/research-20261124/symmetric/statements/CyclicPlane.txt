@@ -1,0 +1,9 @@
+let P := fun (x y : ℂ) => Matrix.of ![![0, -x - 3*y, -x + 3*y, 2*y],
+    ![-x - 3*y, 0, 2*x, -x - y],
+    ![-x + 3*y, 2*x, 0, x - y],
+    ![2*y, -x - y, x - y, 0]];
+  Function.Injective (fun z : ℂ × ℂ => P z.1 z.2) ∧
+  (∀ x y : ℂ, (Matrix.of fun i j => 1 + P x y i j).permanent = 24) ∧
+  ∀ D : Matrix (Fin 4) (Fin 4) ℂ, D.IsSymm →
+    (∀ x y t : ℂ, (Matrix.of fun i j => 1 + P x y i j + t*D i j).permanent = 24) →
+    ∃ p q, D = P p q
