@@ -1,0 +1,8 @@
+∀ (n : ℕ) (G : SimpleGraph (Fin n)) [DecidableRel G.Adj] (C : PEqualNP.CircuitLowerBounds.Circuit),
+  PEqualNP.TopForm.IsLeastAO G C → ∀ r < C.gates.length, ∀ i < n + r,
+  let w := fun (x : Fin n → Bool) (k : ℕ) => (C.wires (List.ofFn x)).getD k false
+  ¬ ((∀ a b : Fin n, G.Adj a b →
+        w (PEqualNP.EdgeOwnership.pairInput a b) (n+r) = true →
+        w (PEqualNP.EdgeOwnership.pairInput a b) i = true) ∧
+     (∀ x : Fin n → Bool, Maximal (fun y => PEqualNP.MetaComplexity.NestedCover.graphFun G ∅ y = false) x →
+        w x i = true → w x (n+r) = true))

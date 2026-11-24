@@ -1,0 +1,24 @@
+[
+ {
+  "edges": [
+   [
+    0,
+    1
+   ],
+   [
+    0,
+    2
+   ]
+  ],
+  "order": 3,
+  "star_upper": 2,
+  "tests": [
+   [
+    2,
+    "SAT",
+    "UNSAT"
+   ]
+  ],
+  "first_found": 2
+ }
+]

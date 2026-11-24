@@ -1,0 +1,10 @@
+let included : {n : Nat} → BitVec n → BitVec n → Prop := fun a b => a &&& b = a
+let mono : {n : Nat} → (BitVec n → Bool) → Prop := fun f => ∀ a b, included a b → f a = true → f b = true
+let forced : BitVec 14 → Bool := fun x => [257, 1025, 130, 514, 8194, 260, 4100, 8196, 136, 2056, 4104, 1040, 2064, 8208, 544, 1056, 4128, 320, 576, 2112].any (fun m : BitVec 14 => x &&& m == m)
+let distinguished : BitVec 14 → Bool := fun x => x &&& 129 == (129 : BitVec 14)
+let cycleEdge : BitVec 8 → Bool := fun x => [3, 6, 12, 24, 48, 96, 192, 129].any (fun m : BitVec 8 => x &&& m == m)
+let expand : BitVec 8 → BitVec 14 := fun y => (129 : BitVec 14) ||| (if y.getLsbD 0 then 4 else 0) ||| (if y.getLsbD 1 then 4096 else 0) ||| (if y.getLsbD 2 then 32 else 0) ||| (if y.getLsbD 3 then 512 else 0) ||| (if y.getLsbD 4 then 64 else 0) ||| (if y.getLsbD 5 then 2048 else 0) ||| (if y.getLsbD 6 then 16 else 0) ||| (if y.getLsbD 7 then 8192 else 0)
+let large := {f : BitVec 14 → Bool // mono f ∧ (∀ x, forced x = true → f x = true) ∧ (∀ x, f x = true → (forced x || distinguished x) = true) ∧ f 129 = false}
+let small := {q : BitVec 8 → Bool // mono q ∧ q 0 = false ∧ ∀ x, cycleEdge x = true → q x = true}
+∃ e : large ≃ small, ∀ f y, (e f).val y = f.val (expand y)
+

@@ -1,0 +1,6 @@
+let cycleEdge : BitVec 8 → Bool := fun x =>
+  [3,6,12,24,48,96,192,129].any fun m : BitVec 8 => x &&& m == m
+∀ (q : BitVec 8 → Bool), q 0 = false → (∀ y, cycleEdge y = true → q y = true) →
+  ∀ k : BitVec 8, (∀ y, q (y &&& k) = q y) →
+  4 ≤ k.cpop.toNat ∧ (k.cpop.toNat ≤ 4 →
+    (k = 85 ∨ k = 170) ∧ ∀ y, q y = decide (y &&& k ≠ 0))

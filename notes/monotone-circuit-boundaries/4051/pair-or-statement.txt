@@ -1,0 +1,6 @@
+∀ (n : ℕ) (G H : SimpleGraph (Fin n)) [DecidableRel H.Adj],
+  (∃ decode : (Fin n → Fin n → Prop) → Prop, ∀ X : Finset (Fin n),
+    decode (fun i j => H.Adj i j ∧ (i ∈ X ∨ j ∈ X)) ↔
+      ∃ a ∈ X, ∃ b ∈ X, G.Adj a b) ↔
+  (∀ v a, G.Adj v a → ∃ i ∈ insert a (H.neighborFinset v),
+    ∃ j ∈ insert a (H.neighborFinset v), G.Adj i j)

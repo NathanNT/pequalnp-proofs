@@ -1,0 +1,8 @@
+∀ (n : ℕ) (G : SimpleGraph (Fin n)) [DecidableRel G.Adj] (v : Fin n),
+  (∀ w : G.Walk v v, w.IsCycle → w.length ≠ 4) →
+  ∀ (S : Finset (Fin n)), v ∉ S → S.card < G.degree v →
+  ∀ (wire : Finset (Fin n) → Bool → Bool) (decode : Finset (Fin n) → Bool → Prop),
+  (∀ X : Finset (Fin n), v ∉ X → ∀ b : Bool, decode X (wire (X ∩ S) b) ↔
+    ∃ i ∈ (if b then insert v X else X), ∃ j ∈ (if b then insert v X else X), G.Adj i j) →
+  ∀ T : Finset (Fin n), T ⊆ S → (¬ ∃ i ∈ T, ∃ j ∈ T, G.Adj i j) →
+    wire T false ≠ wire T true

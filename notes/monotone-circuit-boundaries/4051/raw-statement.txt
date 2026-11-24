@@ -1,0 +1,9 @@
+∀ (n : ℕ) (G : SimpleGraph (Fin n)) [DecidableRel G.Adj] (v : Fin n),
+  (∀ w : G.Walk v v, w.IsCycle → w.length ≠ 4) →
+  ∀ (C : PEqualNP.CircuitLowerBounds.Circuit),
+  (∀ x : Fin n → Bool, C.eval (List.ofFn x) = true ↔
+    ∃ i j, G.Adj i j ∧ x i = true ∧ x j = true) →
+  ∀ (S T : Finset (Fin n)), v ∉ S → T ⊆ S → (¬ ∃ i ∈ T, ∃ j ∈ T, G.Adj i j) →
+  (∀ g ∈ C.gates, v.val ∈ g.inputs → ∃ p ∈ S, p.val ∈ g.inputs ∧
+    ((p ∈ T ∧ g.op = .or) ∨ (p ∉ T ∧ g.op = .and))) →
+  G.degree v ≤ S.card
