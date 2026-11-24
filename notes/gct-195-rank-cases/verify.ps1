@@ -22,7 +22,8 @@ try {
     'SaturatedTensorBound','OrderedPermanent','SaturatedMatrixBound','KernelTriples',
     'PermanentPencil','SaturatedKernel','DeskWords','DeskAlgebra','DeskPolarization',
     'DeskOrder','ChartTable','ChartSpan','ChartGradient','CanonicalCap','ReindexKernel',
-    'RankSevenAssembly','RankSeven195','CubicSix','OneModeCubic','OneModeBound','CubicRankEightCase'
+    'RankSevenAssembly','RankSeven195','CubicSix','OneModeCubic','OneModeBound','CubicRankEightCase',
+    'PureContractions','PureTests','PureRowEquations','PureGeometry','PureSixth','PureCriterion','PureRows195','QuotientWitness','QuotientWitness195'
   )
   foreach ($name in $modules) {
     $inputFile = Join-Path $PSScriptRoot "PEqualNP/Gct/$name.lean"
@@ -34,6 +35,10 @@ try {
   if ($LASTEXITCODE) { throw 'The project checker did not accept the rank-seven statement.' }
   & $checker PEqualNP.Gct.CubicRankEightCase (Join-Path $PSScriptRoot 'CubicRankEightCase.txt') check
   if ($LASTEXITCODE) { throw 'The project checker did not accept the cubic statement.' }
+  foreach ($name in 'PureRows195','QuotientWitness195') {
+    & $checker "PEqualNP.Gct.$name" (Join-Path $PSScriptRoot "$name.txt") check
+    if ($LASTEXITCODE) { throw "The project checker did not accept $name." }
+  }
 } finally {
   $env:Path = $savedToolPath
   $env:LEAN_PATH = $oldPath

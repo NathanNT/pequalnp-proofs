@@ -1,6 +1,6 @@
 # L-gct-195 at contrast ranks seven and eight
 
-Both statements start with the four subpermanent sums in the desk's L-gct-195. The seven and eight refer to the dimension of the image of the row contrast map. For a matrix with rows R₁ through R₄, the image coordinates are R₁+3R₄, R₂+3R₄, and R₃+3R₄.
+The statements start with the four subpermanent sums in the desk's L-gct-195. The seven and eight refer to the dimension of the image of the row contrast map. For a matrix with rows R₁ through R₄, the image coordinates are R₁+3R₄, R₂+3R₄, and R₃+3R₄.
 
 ## Rank seven
 
@@ -24,6 +24,14 @@ The seven linear coordinates (s,z₁−s/2,…,z₆−s/2) recover z. Polarizing
 
 The unrestricted rank-eight case and the full L-gct-195 upper bound remain open in this work.
 
+## Pure rows and a quotient witness
+
+For any nonzero contrast-kernel matrix (3f,3f,3f,−f) in L, at most one pure-row subspace has dimension at least two. The vector f is arbitrary. [Proof and argument](pure-rows.md) · [Checker output](pure-rows-checker.log).
+
+Let M record three row sums and five column sums, and let P be any subspace of L. If dim(L/P) + dim M(P) > 8, there exists a matrix in L outside P with every row and column sum zero whose entrywise conjugate lies outside L. Taking P = 0 applies this test to any nine-dimensional candidate, including spaces with injective contrast. [Exact statement](QuotientWitness195.txt) · [Lean proof](PEqualNP/Gct/QuotientWitness195.lean) · [Checker output](quotient-checker.log).
+
+The two Fourier scripts separately test 1,024 ten-dimensional character spaces W. The extension calculation establishes dim(L ∩ W) ≤ 7 for these spaces, hence dim L ≤ 8 when at most one further direction is added to W. The programs check finite certificates. Run `python check_fourier_quotient.py` and `python check_fourier_extensions.py` from this directory. The unrestricted dimension bound remains open.
+
 ## Verification
 
 The proof environment uses Lean 4.36.0 and the checker from project revision `26285e089fbda7ce3c86eea27cf728023a31de65`. From PowerShell, pass the existing configured project’s lean directory to the script. The pinned Mathlib, the project definitions, L065, the FermatFromKneser helper, and the checklemma executable must already be built. The script compiles the supplied sources into a local .build directory.
@@ -37,6 +45,3 @@ The proof environment uses Lean 4.36.0 and the checker from project revision `26
 The public source comparison on 24 November 2026 covered 9,407 PR heads and 10,458 distinct Lean file versions. Twenty-six versions across six paths matched the 4-by-6 matrix and dimension patterns. The related L-gct-206 construction uses a Fourier column and proves a lower bound. The search also covered 14 repository discussions, including available comments, and 232 GCT history records. The two previous submissions indexed under L-gct-195 were a skeleton and a reduction by pure-row dimension. Neither provides these contrast-rank conclusions. These searches cover public work visible at the time.
 
 [Earlier skeleton](https://github.com/open-goat/pequalnp-proofs/pull/2842) · [Earlier reduction](https://github.com/open-goat/pequalnp-proofs/pull/8388/files) · [Seven-dimensional witness](https://github.com/open-goat/pequalnp-proofs/pull/76) · [Project discussions](https://github.com/open-goat/pequalnp-proofs/discussions)
-
-
-The pure-row argument and its coefficient checks are in [pure-rows.md](pure-rows.md). Its conclusion concerns the dimensions of pure-row subspaces. The unrestricted dimension bound remains open.
