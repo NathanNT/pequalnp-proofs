@@ -1,0 +1,830 @@
+\documentclass[10pt,a4paper]{article}
+\pdfinfoomitdate=1
+\pdftrailerid{}
+\pdfsuppressptexinfo=-1
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{mathpazo}
+\IfFileExists{beramono.sty}{\usepackage[scaled=0.86]{beramono}}{}
+\usepackage[a4paper,left=2.22cm,right=2.22cm,top=2.4cm,bottom=2.6cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{array,longtable}
+\usepackage[table]{xcolor}
+\usepackage{microtype}
+\DeclareUnicodeCharacter{211D}{\ensuremath{\mathbb{R}}}
+\DeclareUnicodeCharacter{2264}{\ensuremath{\le}}
+\DeclareUnicodeCharacter{2200}{\ensuremath{\forall}}
+\DeclareUnicodeCharacter{2228}{\ensuremath{\lor}}
+\usepackage[hidelinks,
+  pdftitle={Positive roots of sums of cubes of binomials: a readable account of eighteen Lean-checked statements, with one new case},
+  pdfauthor={},pdfsubject={},pdfkeywords={}]{hyperref}
+
+% Layout in the manner of the project's first paper: left-aligned bold title, a lead paragraph, numbered bold
+% headings with a hairline, ragged-right text without indentation, ruled tables with a shaded header row.
+\makeatletter
+\renewcommand\normalsize{\@setfontsize\normalsize{10.6}{15.4}%
+  \abovedisplayskip 8pt plus 2pt minus 4pt \abovedisplayshortskip 2pt plus 3pt
+  \belowdisplayshortskip 5pt plus 3pt minus 3pt \belowdisplayskip\abovedisplayskip \let\@listi\@listI}
+\normalsize
+\renewcommand\small{\@setfontsize\small{9.2}{13}}
+\renewcommand\footnotesize{\@setfontsize\footnotesize{8.6}{12.2}}
+\renewcommand\section{\@startsection{section}{1}{\z@}{1.7em plus .3em minus .2em}{0.25em}%
+  {\normalfont\bfseries\fontsize{13.5}{17}\selectfont\raggedright}}
+\renewcommand\subsection{\@startsection{subsection}{2}{\z@}{1.3em plus .2em minus .2em}{0.35em}%
+  {\normalfont\bfseries\fontsize{11.6}{15}\selectfont\raggedright}}
+\renewcommand\@seccntformat[1]{\csname the#1\endcsname.\ }
+\let\note@section\section
+\RenewDocumentCommand{\section}{s o m}{%
+  \IfBooleanTF{#1}{\note@section*{#3}}{\IfNoValueTF{#2}{\note@section{#3}}{\note@section[#2]{#3}}}%
+  \par\nobreak\vspace{-0.15em}{\color{black!22}\hrule height 0.5pt}\nobreak\vspace{0.55em}\@afterheading}
+\makeatother
+\definecolor{headgray}{gray}{0.93}
+\arrayrulecolor{black!25}
+\setlength{\arrayrulewidth}{0.5pt}
+\renewcommand{\arraystretch}{1.3}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.62em}
+\pagestyle{empty}
+\AtBeginDocument{\raggedright}
+\emergencystretch=1em
+
+\theoremstyle{definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{example}[theorem]{Example}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\lean}[1]{{\ttfamily\small\renewcommand{\_}{\textunderscore\allowbreak}#1}}
+\newcommand{\row}[1]{L-gct-#1}
+\newcommand{\eps}{\varepsilon}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\begin{document}
+\thispagestyle{empty}
+
+{\raggedright\bfseries\fontsize{17}{22}\selectfont Positive roots of sums of cubes of binomials: a readable
+account of eighteen Lean-checked statements, with one new case\par}
+\vspace{0.9em}
+
+This document is a human-readable account of eighteen statements about the roots of small sums of cubes and of
+products of sparse real polynomials, each checked in Lean~4 with Mathlib by contributors to the PEqualNP project,
+together with one new example and its consequence. The Lean files are public at
+\url{https://github.com/open-goat/pequalnp-proofs}, under \lean{lean/PEqualNP/Outside/}: one file per statement,
+named in Table~\ref{tab:rows}. The text says for each statement whether it is checked in Lean, proved here on
+paper, or the result of a computation. The prose itself is not machine-checked and has not been read by a human
+mathematician.
+
+A nonzero sum of $k$ cubes of real binomials has at most $4k$ monomials, hence at most $4k-1$ positive roots by
+Descartes' rule of signs. Contributors to the project have given examples, checked in Lean, with $4k-1$ positive
+roots for $k=3$, $5$ and $6$, and with $14$ for $k=4$. This note gives an example with $15$ positive roots for
+$k=4$, also checked in Lean, and an elementary gluing lemma. Together with the earlier examples they show that the
+largest number of positive roots of a nonzero sum of $k$ cubes of real binomials is $4k-1$ for every $k\ge3$; it is
+$1$ for $k=1$ and $3$ for $k=2$. For the order of a positive root of a sum of three cubes, the project has proved
+the bound $9$ for polynomials and an example of order $7$ is known. The note observes that the same proof gives the
+bound $9$ for real exponents, records an identity with real exponents in which the order is exactly $9$, and
+reports an exact computation showing that no example with integer exponents up to $32$ has order $8$ or more. It
+also describes the related checked statements on $fg+1$ and $pq-rs$. It says nothing about the truth of the real
+$\tau$-conjecture.
+
+26 November 2026.
+
+\section{Introduction}\label{sec:intro}
+
+A \emph{$t$-nomial} is a real polynomial with at most $t$ monomials; binomials and trinomials are the cases $t=2,3$.
+By Descartes' rule of signs a nonzero $t$-nomial has at most $t-1$ positive roots, and for every choice of $t$
+exponents some choice of coefficients attains this. The question behind this note is what remains of the bound when
+the coefficients are not free. The simplest structured families are $\sum_{i=1}^k g_i^3$ with binomials $g_i$,
+where $4k$ coefficients depend on $2k$ parameters, and $fg+1$ with $t$-nomials $f,g$. Questions of this kind come
+from Koiran's real $\tau$-conjecture, which predicts that sums of products of sparse polynomials have few real
+roots (Section~\ref{sec:context}).
+
+The PEqualNP project (\url{https://pequalnp.com}) maintains a public repository of Lean~4 proofs,
+\url{https://github.com/open-goat/pequalnp-proofs}. In November 2026 it posted forty statements on small cases of
+this question, as twenty pairs consisting of a bound and its negation, and outside contributors proved one statement
+of eighteen of the pairs. Table~\ref{tab:rows} lists these eighteen statements. Each is the last theorem of a file
+\lean{lean/PEqualNP/Outside/L\_gct\_N.lean}. The column ``statement'' gives what was posted and proved. The column
+``file'' gives the number of roots that the file itself exhibits, which is often larger. The column $D$ is the upper
+bound given by the rule of signs. The last column names the account that submitted the accepted pull request.
+
+\begin{table}[ht]
+\centering\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{|l|L{5.0cm}|c|c|c|L{3.9cm}|}
+\hline
+\rowcolor{headgray}\textbf{name} & \textbf{family} & \textbf{statement} & \textbf{file} & $\boldsymbol{D}$ & \textbf{submitted by (pull request)}\\\hline
+\row{241} & $3$ cubes of binomials, positive roots & $>9$ & $11$ & $11$ & XXXLUMI (\#14351)\\\hline
+\row{251} & $4$ cubes of binomials, positive roots & $>13$ & $14$ & $15$ & k-sandhu (\#14687)\\\hline
+\row{253} & $5$ cubes of binomials, positive roots & $>17$ & $19$ & $19$ & junyeopYim (\#15826)\\\hline
+\row{255} & $6$ cubes of binomials, positive roots & $>21$ & $23$ & $23$ & k-sandhu (\#14652)\\\hline
+\row{257} & $3$ cubes of binomials, real roots & $>19$ & $22$ & $23$ & k-sandhu (\#14650)\\\hline
+\row{243} & $3$ cubes of trinomials, positive roots & $>14$ & $15$ & $29$ & k-sandhu (\#14699)\\\hline
+\row{245} & $3$ cubes of $4$-nomials, positive roots & $>21$ & $23$ & $59$ & k-sandhu (\#14662)\\\hline
+\row{247} & $3$ cubes of $5$-nomials, positive roots & $>26$ & $27$ & $104$ & k-sandhu (\#14717)\\\hline
+\row{249} & $3$ cubes of $6$-nomials, positive roots & $>33$ & $35$ & $167$ & k-sandhu (\#14669)\\\hline
+\row{259} & $3$ cubes of trinomials, real roots & $>29$ & $30$ & $59$ & k-sandhu (\#14706)\\\hline
+\row{234} & $3$ cubes of binomials, order of a positive root &
+\multicolumn{2}{c|}{$\le 9$} & $11$ & Aargau (\#23576)\\\hline
+\row{261} & $fg+1$, trinomials, positive roots & $>7$ & $8$ & $9$ & hedanbaomi (\#13871)\\\hline
+\row{263} & $fg+1$, $4$-nomials, positive roots & $>10$ & $11$ & $16$ & k-sandhu (\#14768)\\\hline
+\row{265} & $fg+1$, $5$-nomials, positive roots & $>11$ & $12$ & $25$ & k-sandhu (\#14655)\\\hline
+\row{267} & $fg+1$, trinomials, real roots & $>7$ & $8$ & $19$ & BastianMIllan (\#13649)\\\hline
+\row{269} & $fg+1$, $4$-nomials, real roots & $>12$ & $13$ & $33$ & blarneys (\#13524)\\\hline
+\row{271} & $fg+1$, $5$-nomials, real roots & $>14$ & $15$ & $51$ & gcq (\#13516)\\\hline
+\row{273} & $pq-rs$, $4$-nomials, positive roots & $>22$ & $23$ & $31$ & SemyonOsadchii (\#16079)\\\hline
+\end{tabular}
+\caption{The eighteen checked statements. Coefficients are real. The table counts distinct roots, except for
+\row{234}, which bounds the order of a single root.}
+\label{tab:rows}
+\end{table}
+
+Throughout, bounds on the number or the order of roots concern functions that are not identically zero. The file of
+\row{234} proves an upper bound for the order of a root of a polynomial. The other files certify lower bounds for
+the number of roots of explicit examples. When an example attains the bound of the rule of signs, that bound also
+gives the exact number of roots and their simplicity. The general statement on the number of roots,
+Theorem~\ref{thm:main}, uses in addition the gluing lemma.
+
+The multiplicity question was also studied in Discussion \#21999 of the repository. The following results from it
+are used below. They are due to maxkieff: the polynomial
+$2250(X^3-X^2)^3-125(X^4-X)^3+9(X^5-1)^3$ has a root of order exactly $7$ at $1$; if all three binomials vanish at
+the root, the order is at most $7$; and, in that case, the conditions that order $8$ imposes on the exponents, which
+are recalled before Proposition~\ref{prop:family}. The discussion also contains a search by maxkieff excluding
+orders $10$ and $11$ for small exponents, and an argument of silentoplayz excluding order $11$ when the sum has
+twelve distinct exponents, and order $10$ when it has eleven, provided that three consecutive exponents of one cube
+are not shared with another cube and no other exponent of the sum lies between them. Both were overtaken by
+\row{234}, which was proved a few hours later.
+
+Beyond the eighteen files and that discussion, this note contains the following.
+\begin{enumerate}\setlength{\itemsep}{0pt}
+\item[(a)] A sum of four cubes of binomials with $15$ positive roots (Theorem~\ref{thm:four}). The lower bound $15$ is
+checked in Lean.
+\item[(b)] A gluing lemma (Lemma~\ref{lem:glue}) and the resulting exact values for all $k$
+(Theorem~\ref{thm:main}, Corollary~\ref{cor:real}). These are proved here and are not formalized.
+\item[(c)] The remark that the proof of \row{234} gives the bound $9$ also for real exponents
+(Proposition~\ref{prop:real}), and an identity showing that $9$ is attained there (Proposition~\ref{prop:nine}),
+together with the next two moments of the family studied by maxkieff (Proposition~\ref{prop:family}).
+\item[(d)] An exact computation: no nonzero sum of three cubes of binomials with exponents in $[0,32]$ has a
+positive root of order $8$ or more (Proposition~\ref{prop:search}).
+\end{enumerate}
+All eighteen files of Table~\ref{tab:rows} were recompiled against Mathlib alone, and the statements quoted here were
+compared with the Lean declarations (Appendix~\ref{sec:lean}).
+
+\section{Preliminaries}\label{sec:prelim}
+
+Let $\mathcal{S}_k$ be the set of real polynomials $\sum_{i=1}^k g_i^3$ with binomials $g_i$. The Lean statements
+are written for $\sum_i s_i g_i^3$ with $s_i\in\{1,-1\}$, which is the same set because $-g^3=(-g)^3$; real
+coefficients $c_ig_i^3$ also give the same set. Let $N(k)$ be the largest number of distinct positive roots of a
+nonzero polynomial in $\mathcal{S}_k$.
+
+Section~\ref{sec:mult} also uses \emph{signomials} $\sum_j c_jx^{e_j}$ with real exponents, regarded as functions on
+$(0,\infty)$. The two lemmas below hold for them with the same proofs.
+
+\begin{lemma}[Descartes' rule of signs]\label{lem:descartes}
+A nonzero real signomial with $m$ monomials has at most $m-1$ positive roots counted with multiplicity.
+\end{lemma}
+
+\begin{lemma}\label{lem:hajos}
+A nonzero real signomial with $m$ monomials has no positive root of order $m$ or more.
+\end{lemma}
+
+Lemma~\ref{lem:descartes} is classical; see \cite{AlbouyFu}, which also recalls that the bound is attained for free
+coefficients. Lemma~\ref{lem:hajos} is a special case. It is usually attributed to Haj\'os \cite{Hajos}; printed
+proofs are in \cite[Proposition~3.2]{Lenstra} and \cite[Lemma~3.9]{KoiranSkomra}, and a proof by a Vandermonde
+determinant is formalized in the file of \row{234}. Since a polynomial in $\mathcal{S}_k$ has at most $4k$
+monomials,
+\begin{equation}\label{eq:upper}
+N(k)\le4k-1 .
+\end{equation}
+
+A function $f$ on $(0,\infty)$ \emph{alternates} at the points $x_0<x_1<\dots<x_n$ if $f(x_i)\ne0$ for all $i$ and
+$f(x_{i-1})f(x_i)<0$ for $i=1,\dots,n$. A continuous function that alternates at $n+1$ points has at least $n$
+distinct zeros. Alternation is used to prove the root counts of Sections \ref{sec:three} and \ref{sec:more}.
+
+\begin{proposition}\label{prop:two}
+$N(1)=1$ and $N(2)=3$.
+\end{proposition}
+\begin{proof}
+A nonzero binomial has at most one positive root, and $(x-1)^3$ has one. Since $y\mapsto y^3$ is injective on $\R$,
+$g_1(x)^3+g_2(x)^3=0$ exactly when $g_1(x)+g_2(x)=0$. If the sum of cubes is not the zero polynomial, $g_1+g_2$ is
+a nonzero $4$-nomial and has at most three positive roots. With $g_1=x^3-6x^2$ and $g_2=11x-6$ the roots $1,2,3$
+are attained.
+\end{proof}
+
+Dutta \cite[Theorem~10]{Dutta} uses the same observation for sparse polynomials in general: the number of real roots
+of a nonzero $c_1f_1^3+c_2f_2^3$ is at most a constant times the number of monomials occurring in $f_1$ or $f_2$.
+For two cubes of binomials the expansion has up to eight monomials, so the rule of signs alone would allow seven
+positive roots.
+
+\section{Three cubes}\label{sec:three}
+
+\begin{theorem}[\row{241}, XXXLUMI]\label{thm:three}
+Let $\eps=39/250000$, $c=1678911/20000000$ and
+\[
+g_0=x^{6402}-\eps\,x^{12802},\qquad g_1=\eps-x^{6400},\qquad g_2=c\,\bigl(x^{8449}-x^{4353}\bigr).
+\]
+The polynomial $P=g_0^3+g_1^3+g_2^3$ has exactly $11$ positive roots, all simple. Hence $N(3)=11$.
+\end{theorem}
+\begin{proof}
+One has $x^{12802}g_0(1/x)=-g_1(x)$, $x^{12802}g_1(1/x)=-g_0(x)$ and $x^{12802}g_2(1/x)=-g_2(x)$, hence
+\begin{equation}\label{eq:anti}
+x^{38406}\,P(1/x)=-P(x)\qquad(x>0).
+\end{equation}
+Next, write $q=x^{256}$. Since $6400=256\cdot25$, $6402=2+256\cdot25$, $12802=2+256\cdot50$,
+$4353=1+256\cdot17$ and $8449=1+256\cdot33$,
+\[
+g_0=x^2q^{25}(1-\eps q^{25}),\qquad g_1=\eps-q^{25},\qquad g_2=c\,x\,q^{17}(q^{16}-1),
+\]
+so that $P(x)=A(q)x^6+B(q)x^3+C(q)$ with $A=q^{75}(1-\eps q^{25})^3$, $B=c^3q^{51}(q^{16}-1)^3$ and
+$C=(\eps-q^{25})^3$. Table~\ref{tab:three} gives the three terms at the six points $x_j=q_j^{1/256}$.
+
+\begin{table}[ht]\centering\small
+\begin{tabular}{|l|r|r|r|r|}
+\hline
+\rowcolor{headgray}$q_j$ & $A(q_j)\,x_j^6$ & $B(q_j)\,x_j^3$ & $C(q_j)$ & $P(x_j)$\\\hline
+$26/25$ & $18.9390296$ & $0.0029101$ & $-18.9419289$ & $1.08\cdot10^{-5}$\\\hline
+$27/25$ & $320.754188$ & $0.428191$ & $-321.182581$ & $-2.01\cdot10^{-4}$\\\hline
+$17/15$ & $11842.5583$ & $92.2812$ & $-11934.8174$ & $2.21\cdot10^{-2}$\\\hline
+$13/11$ & $268964.844$ & $7280.02$ & $-276246.583$ & $-1.72$\\\hline
+$7/5$ & $2.43\cdot10^{9}$ & $1.72\cdot10^{11}$ & $-9.11\cdot10^{10}$ & $8.29\cdot10^{10}$\\\hline
+$2$ & $-5.50\cdot10^{33}$ & $3.78\cdot10^{26}$ & $-3.78\cdot10^{22}$ & $-5.50\cdot10^{33}$\\\hline
+\end{tabular}
+\caption{The values of $P$ at $x_j=q_j^{1/256}$, rounded.}\label{tab:three}
+\end{table}
+
+The signs of $P(x_1),\dots,P(x_6)$ are $+,-,+,-,+,-$. The Lean file proves this with rational arithmetic: for
+$j\le5$ the coefficients $A(q_j)$ and $B(q_j)$ are nonnegative, so $A(q_j)x^6+B(q_j)x^3+C(q_j)$ is nondecreasing in
+$x\ge 0$, and it suffices to evaluate it at a rational lower or upper bound for $x_j$ obtained by eight successive
+squarings; for $j=6$ the bounds $1<x_6<2$ suffice. By \eqref{eq:anti}, $P(1/x_j)$ and $P(x_j)$ have opposite
+signs. Therefore $P$ alternates at the twelve points
+\[
+1/x_6<\dots<1/x_1<x_1<\dots<x_6 ,
+\]
+and has at least eleven positive roots. It has twelve monomials, so by Lemma~\ref{lem:descartes} it has at most
+eleven positive roots counted with multiplicity.
+\end{proof}
+
+In increasing order the exponents of $P$ are $0$, $6400$, $12800$, $13059$, $17155$, $19200$, $19206$, $21251$,
+$25347$, $25606$, $32006$, $38406$; they come from $g_1,g_1,g_1,g_2,g_2,g_1,g_0,g_2,g_2,g_0,g_0,g_0$, and the
+coefficients alternate in sign along this list.
+
+\section{Any number of cubes}\label{sec:more}
+
+\begin{lemma}[gluing]\label{lem:glue}
+Let $P\in\mathcal{S}_{k_1}$ alternate at $p+1$ points of $(0,\infty)$ and let $Q\in\mathcal{S}_{k_2}$ alternate at
+$q+1$ points of $(0,\infty)$, where $p,q\ge0$. Then some $R\in\mathcal{S}_{k_1+k_2}$ alternates at $p+q+2$ points
+of $(0,\infty)$.
+\end{lemma}
+\begin{proof}
+Let $x_0<\dots<x_p$ and $y_0<\dots<y_q$ be the points for $P$ and $Q$, let $d$ be the degree of $P$, and fix an
+integer $n$ with $3n\ge d+2$. Choose $\sigma\in\{1,-1\}$ such that $\sigma Q(y_0)$ and $P(x_p)$ have opposite
+signs. For a real number $\lambda\ge1$ put
+\[
+R_\lambda(x)=P(x)+\sigma\,\lambda^{\,d+1-3n}\,x^{3n}\,Q(x/\lambda).
+\]
+If $Q=\sum_j h_j^3$ with binomials $h_j$, the second term is the sum of the cubes of the binomials
+$\sigma\lambda^{(d+1-3n)/3}x^{n}h_j(x/\lambda)$, so $R_\lambda\in\mathcal{S}_{k_1+k_2}$.
+
+At a point $x_i$ the second term is at most $\lambda^{-1}x_p^{3n}\max_{[0,x_p]}|Q|$ in absolute value, because
+$d+1-3n\le-1$ and $0<x_i/\lambda\le x_p$. This tends to $0$ as $\lambda\to\infty$, so $R_\lambda(x_i)$ has the sign
+of $P(x_i)$ for all large $\lambda$.
+
+At a point $\lambda y_j$ the second term equals $\sigma\lambda^{d+1}y_j^{3n}Q(y_j)$, while
+$|P(\lambda y_j)|\le\lambda^{d}\,c_P$ with a constant $c_P$ depending only on $P$ and $y_q$. So
+$R_\lambda(\lambda y_j)$ has the sign of $\sigma Q(y_j)$ for all large $\lambda$.
+
+For large $\lambda$ one also has $x_p<\lambda y_0$. Then $R_\lambda$ alternates at
+$x_0<\dots<x_p<\lambda y_0<\dots<\lambda y_q$: the signs alternate within each group, and they differ at $x_p$ and
+$\lambda y_0$ by the choice of $\sigma$.
+\end{proof}
+
+The same proof applies to sums $\sum_i s_ig_i^{\,r}$ of $r$-th powers of $t$-nomials with signs $s_i=\pm1$, with
+$x^{rn}$ in place of $x^{3n}$.
+
+\begin{theorem}\label{thm:four}
+Let $\eps=85749603/10^{15}$, $a=98180897/10^{8}$, $b=29608419/10^{9}$ and
+\[
+g_1=x^{814}-\eps,\quad g_2=-x^{722}+\eps\,x^{1536},\quad g_3=-a\,x^{815}+b\,x^{613},\quad
+g_4=a\,x^{721}-b\,x^{923}.
+\]
+The polynomial $P=g_1^3+g_2^3+g_3^3+g_4^3$ has exactly $15$ positive roots, all simple. Hence $N(4)=15$.
+\end{theorem}
+\begin{proof}
+$P$ has $16$ monomials, so it has at most $15$ positive roots counted with multiplicity. It alternates at the
+following sixteen points, with a negative value at the first:
+\begin{center}\small
+\begin{tabular}{|l|l|l|l|}
+\hline
+0.9771649 & 0.9809889 & 0.9838065 & 0.9868765\\\hline
+0.9902401 & 0.9926549 & 0.9947432 & 0.9978011\\\hline
+1.0022038 & 1.0052845 & 1.0073995 & 1.0098561\\\hline
+1.0132980 & 1.0164601 & 1.0193795 & 1.0233687
+\end{tabular}
+\end{center}
+The sixteen signs were computed in exact rational arithmetic, and independently in Lean by interval arithmetic with
+outward rounding (Appendix~\ref{sec:lean}).
+\end{proof}
+
+Here $g_2(x)=-x^{1536}g_1(1/x)$ and $g_4(x)=-x^{1536}g_3(1/x)$, so $x^{4608}P(1/x)=-P(x)$, as in
+\eqref{eq:anti}. The example of k-sandhu in the file of \row{251} adds one cube to the three cubes of
+Theorem~\ref{thm:three} and has exactly $14$ positive roots: the file gives $14$, and its coefficients have $14$
+changes of sign. Appendix~\ref{sec:found} explains how the example above was found.
+
+For five and six cubes the bound \eqref{eq:upper} is already attained by examples in the repository: the file of
+\row{253} (junyeopYim) contains twenty points at which a sum of five cubes of binomials alternates, and the file of
+\row{255} (k-sandhu) contains twenty-four points for six cubes. The posted statements record only ``more than
+$17$'' and ``more than $21$''.
+
+\begin{theorem}\label{thm:main}
+$N(1)=1$, $N(2)=3$, and $N(k)=4k-1$ for every $k\ge3$.
+\end{theorem}
+\begin{proof}
+The first two values are Proposition~\ref{prop:two}, and $N(k)\le4k-1$ is \eqref{eq:upper}. Let $a(k)$ be the
+largest $n$ such that some polynomial in $\mathcal{S}_k$ alternates at $n+1$ points of $(0,\infty)$; then
+$N(k)\ge a(k)$. Theorem~\ref{thm:three}, Theorem~\ref{thm:four} and the file of \row{253} give $a(3)\ge11$,
+$a(4)\ge15$ and $a(5)\ge19$. If $k\ge6$ and $a(k-3)\ge4(k-3)-1$, Lemma~\ref{lem:glue} gives
+$a(k)\ge a(3)+a(k-3)+1\ge4k-1$. The claim follows by induction on $k$.
+\end{proof}
+
+The lower bounds for $k=3,4,5$ are checked in Lean. Lemma~\ref{lem:glue}, the induction and the use of the rule of
+signs are not. Without Theorem~\ref{thm:four} the same argument, starting from $k=3,5,6$, gives $N(k)=4k-1$ for all
+$k\ge3$ except $k=4$ and $k=7$.
+
+\begin{example}\label{ex:five}
+A second example for five cubes has much smaller exponents than the one in the file of \row{253}, whose exponents
+have nine digits. Let $\alpha=45239/(5\cdot10^{8})$, $\beta=554277/10^{6}$, $\gamma=170373/500000$,
+$\delta=101867/200000$ and
+\begin{gather*}
+g_1=-\alpha x^{384}+\beta x^{344},\quad g_2=\alpha-\beta x^{40},\quad g_3=\gamma x^{349}-x^{305},\quad
+g_4=-\gamma x^{35}+x^{79},\\ g_5=-\delta\,(x^{347}-x^{37}).
+\end{gather*}
+Then $g_1^3+\dots+g_5^3$ has degree $1152$, twenty monomials and exactly $19$ positive roots. The accompanying
+Lean file proves the lower bound $19$.
+\end{example}
+
+\begin{corollary}\label{cor:real}
+For every $k\ge3$ some polynomial in $\mathcal{S}_k$ has $8k-1$ distinct real roots, and no nonzero polynomial with
+at most $4k$ monomials has more.
+\end{corollary}
+\begin{proof}
+If $P=\sum_ig_i^3$ has $4k-1$ positive roots $r_j$, then $x^3P(x^2)=\sum_i\bigl(x\,g_i(x^2)\bigr)^3$ belongs to
+$\mathcal{S}_k$ and has the roots $0$ and $\pm\sqrt{r_j}$. Conversely, a nonzero polynomial with at most $4k$
+monomials has at most $4k-1$ positive roots, at most $4k-1$ negative roots and possibly the root $0$.
+\end{proof}
+
+For $k=3$ this gives $23$ real roots; the file of \row{257} exhibits $22$.
+
+\section{Multiplicity}\label{sec:mult}
+
+Let $M$ be the largest order of a positive root of a nonzero polynomial in $\mathcal{S}_3$. Lemma~\ref{lem:hajos}
+gives $M\le11$. What is known is
+\[
+7\le M\le9 .
+\]
+The lower bound is the example of maxkieff quoted in the introduction. The upper bound is \row{234}, proved by
+Aargau. So for three cubes of binomials the largest order of a root is smaller than the largest number of roots,
+which is $11$. For signomials with free coefficients the two numbers are equal.
+
+\subsection{The bound $9$, also for real exponents}
+
+The Lean proof of \row{234} is long, and a short proof does not seem to be known. Its structure is as follows. Let
+$r>0$ be a root of order at least $10$ of $P=\sum_is_ig_i^3$. Then the ten numbers
+$\sum_k p_k\,r^k\,(k-z)^n$, $n=0,\dots,9$, vanish for every real $z$, where $p_k$ are the coefficients of $P$. If
+one of the three inputs is a monomial, $P$ has at most nine monomials and Lemma~\ref{lem:hajos} applies. Otherwise
+the proof distinguishes how many of the values $g_i(r)$ vanish; exactly two cannot, because $P(r)=0$. If all three
+vanish, the ten equations are shown to force the sums to vanish for all $n$, so that $P=0$. If exactly one
+vanishes, the equations are contradictory. If none vanishes, each cube is described by three normalized
+parameters, a mean, a variance and a third parameter; either the three means coincide and again the sums vanish
+for all $n$, or the equations are shown to be incompatible by two polynomial identities with integer
+coefficients, which fill most of the file and are checked by the Lean kernel.
+
+In this argument the exponents enter only as real numbers. This gives the following.
+
+\begin{proposition}\label{prop:real}
+Let $G(x)=\sum_{i=1}^{3}c_i\bigl(A_ix^{a_i}+B_ix^{b_i}\bigr)^3$ with real coefficients and real exponents, not
+identically zero on $(0,\infty)$. Every positive root of $G$ has order at most $9$.
+\end{proposition}
+\begin{proof}
+After rescaling $x$ the root is $x=1$; put $x=e^{u}$. If $c_iA_iB_i(a_i-b_i)=0$ for some $i$, the $i$-th summand
+has at most one term, $G$ has at most nine terms, and the order is at most $8$ by Lemma~\ref{lem:hajos}. Assume
+this is not the case. For real $t$ the $n$-th derivative of $e^{-3tu}G(e^{u})$ at $u=0$ is
+\[
+T_n(t)=\sum_{i=1}^{3}c_i\Bigl[A_i^3\bigl(3a_i-3t\bigr)^n+3A_i^2B_i\bigl(2a_i+b_i-3t\bigr)^n
++3A_iB_i^2\bigl(a_i+2b_i-3t\bigr)^n+B_i^3\bigl(3b_i-3t\bigr)^n\Bigr].
+\]
+If the root has order at least $10$, then $T_n(t)=0$ for $n\le9$ and all $t$. The case analysis described above,
+carried out with real exponents, shows that then $T_n(t_0)=0$ for some $t_0$ and all $n\ge0$. This step is checked
+in the Lean file \lean{RealExponentMoments.lean}, which imports the file of \row{234} and uses its lemmas, whose
+parameters are real numbers. Now $e^{-3t_0u}G(e^{u})=\sum_e\gamma_e\,e^{(e-3t_0)u}$, where $e$ runs over the
+distinct exponents of $G$, and $\sum_e\gamma_e(e-3t_0)^n=0$ for all $n$ forces all $\gamma_e$ to vanish, since
+a Vandermonde matrix with distinct nodes is invertible. This contradicts $G\ne0$.
+\end{proof}
+
+The algebra in this proof is Aargau's. That it applies to real exponents was observed during the review of this
+note, which also produced the Lean file; the file was then recompiled independently. The two steps proved on paper
+are the passage from order at least ten to the ten equations $T_n(t)=0$, and the Vandermonde deduction from the
+vanishing of all $T_n(t_0)$.
+
+\subsection{Order $9$ with real exponents}
+
+\begin{proposition}\label{prop:nine}
+For real $s$,
+\[
+\Phi(s)=3\sqrt3\,\cosh(s)\,\sinh^3(\sqrt2\,s)\;-\;2\sqrt2\,\sinh^3(\sqrt3\,s)\;=\;\frac{4\sqrt6}{315}\,s^9+O(s^{11}).
+\]
+Consequently, with $x=e^{s}$, the function
+\[
+\frac{3\sqrt3}{16}\Bigl[\bigl(x^{\frac13+\sqrt2}-x^{\frac13-\sqrt2}\bigr)^3+\bigl(x^{-\frac13+\sqrt2}-x^{-\frac13-\sqrt2}\bigr)^3\Bigr]
+-\frac{\sqrt2}{4}\bigl(x^{\sqrt3}-x^{-\sqrt3}\bigr)^3
+\]
+is a sum of three cubes of two-term signomials with twelve distinct exponents, and it has a root of order
+exactly $9$ at $x=1$. By Proposition~\ref{prop:real}, $9$ is the largest order of a positive root of a nonzero sum
+of three cubes of two-term signomials.
+\end{proposition}
+\begin{proof}
+By $\sinh^3u=\tfrac14(\sinh3u-3\sinh u)$ and
+$2\cosh s\,\sinh(\lambda s)=\sinh((\lambda+1)s)+\sinh((\lambda-1)s)$, one has
+$\Phi=\tfrac{3\sqrt3}{8}F-\tfrac{\sqrt2}{2}G$ with
+\begin{align*}
+F(s)&=\sinh((3\sqrt2+1)s)+\sinh((3\sqrt2-1)s)-3\sinh((\sqrt2+1)s)-3\sinh((\sqrt2-1)s),\\
+G(s)&=\sinh(3\sqrt3\,s)-3\sinh(\sqrt3\,s) .
+\end{align*}
+For odd $n$, the coefficient of $s^{n}/n!$ in $\tfrac{3\sqrt3}{8}F$ and in $\tfrac{\sqrt2}{2}G$ is $\sqrt6$ times the
+following integer.
+\begin{center}\small
+\begin{tabular}{|l|r|r|r|r|r|}
+\hline
+\rowcolor{headgray}$n$ & $1$ & $3$ & $5$ & $7$ & $9$\\\hline
+$\tfrac{3\sqrt3}{8}F$ & $0$ & $36$ & $1080$ & $29484$ & $801648$\\\hline
+$\tfrac{\sqrt2}{2}G$ & $0$ & $36$ & $1080$ & $29484$ & $797040$\\\hline
+\end{tabular}
+\end{center}
+For instance, for $n=3$ the function $F$ gives $(3\sqrt2+1)^3+(3\sqrt2-1)^3-3(\sqrt2+1)^3-3(\sqrt2-1)^3=96\sqrt2$,
+and $G$ gives $(3\sqrt3)^3-3(\sqrt3)^3=72\sqrt3$. The difference at $n=9$ is $4608\sqrt6=9!\cdot4\sqrt6/315$. The
+second statement follows from
+$\cosh s\,\sinh^3(\sqrt2s)=\tfrac12\bigl[(e^{s/3}\sinh(\sqrt2s))^3+(e^{-s/3}\sinh(\sqrt2s))^3\bigr]$.
+\end{proof}
+
+The identity was found through a family that goes back to Discussion \#21999. Consider signomials
+\begin{equation}\label{eq:common}
+G(x)=\sum_{i=0}^{2}w_i\,\bigl(x^{a_i}-x^{b_i}\bigr)^3 ,\qquad a_i<b_i\ \text{real},
+\end{equation}
+in which all three binomials vanish at $x=1$, and put $L_i=a_i+b_i$, $D_i=b_i-a_i$, $\omega_i=w_iD_i^3$. With
+$x=e^t$ the order of $G$ at $x=1$ is the least $n$ such that
+\[
+\mu_n=\sum_{i=0}^{2}\frac{\omega_i}{D_i^{3}}\sum_{j=0}^{3}\binom3j(-1)^j\bigl(3a_i+jD_i\bigr)^n
+\]
+is not zero. maxkieff shows that for three distinct values $L_i$ the equations $\mu_3=\dots=\mu_7=0$ determine the
+weights $\omega_i$ up to a common factor and the three numbers $D_i^2$, as in the proposition below. This is
+part~(i), including all three formulas for the $D_i^2$; the third follows by substituting one of his equations into
+another. Parts (ii) and (iii) evaluate the next two moments.
+
+\begin{proposition}\label{prop:family}
+Let $p,q$ be real with $pq(p+q)\ne0$, and let $(L_0,L_1,L_2)=(q,-p,0)$, $(\omega_0,\omega_1,\omega_2)=(p,q,-p-q)$,
+\[
+D_0^2=8p^2+5pq+5q^2,\qquad D_1^2=5p^2+5pq+8q^2,\qquad D_2^2=8p^2+11pq+8q^2 .
+\]
+These three quadratic forms are positive definite, and
+\begin{itemize}\setlength{\itemsep}{0pt}
+\item[(i)] $\mu_n=0$ for $n\le7$;
+\item[(ii)] $\mu_8=378\,pq\,(p-q)(p+q)(p+2q)(2p+q)$;
+\item[(iii)] $\mu_9=-729\,pq\,(p+q)\bigl(6p^4+5p^3q-10p^2q^2+5pq^3+6q^4\bigr)$.
+\end{itemize}
+Hence $G$ has order exactly $8$ at $x=1$ if $(p-q)(p+2q)(2p+q)\ne0$, and order exactly $9$ otherwise.
+\end{proposition}
+\begin{proof}
+Each $\mu_n$ is a polynomial in $p$, $q$ and the $D_i^2$, since the inner sum is divisible by $D_i^3$ and the
+quotient is even in $D_i$. Thus (i) to (iii) are polynomial identities in $p$ and $q$; they were verified with a
+computer algebra system. The quartic factor in (iii) equals $12p^4$ for $q=p$ and for $q=-2p$, and $12q^4$ for
+$p=-2q$, so $\mu_9\ne0$ on the three exceptional lines.
+\end{proof}
+
+For $p=q=1$ one has $L=(1,-1,0)$, $D^2=(18,18,27)$, $\omega=(1,1,-2)$, and
+$G(e^{2s/3})=-\tfrac{8}{81\sqrt6}\,\Phi(s)$ with the function $\Phi$ of Proposition~\ref{prop:nine}. The two other
+exceptional lines give the same example after a common translation of the $L_i$, a rescaling of the variable, a
+permutation of the summands and multiplication by a nonzero constant.
+
+Since orders $8$ and $9$ occur for real exponents, a proof that $M\le8$ or $M=7$ for polynomials cannot be valid
+for arbitrary real exponents; it has to use an arithmetic property of the exponents. This is how maxkieff's
+argument for \eqref{eq:common} works. By his result quoted above, an example \eqref{eq:common} of order at least
+$8$ with rational exponents and distinct $L_i$ would give nonzero rational $p,q$ such that $8p^2+5pq+5q^2$ and
+$5p^2+5pq+8q^2$ are squares of rational numbers. After clearing denominators these forms are congruent to $3p^2$
+and $3q^2$ modulo $5$, and $3$ is not a square modulo $5$, so $p$, $q$ and the two square roots are divisible by
+$5$, which leads to an infinite descent. The reduction of the general case of \eqref{eq:common} to this family is
+maxkieff's and was not re-derived here.
+
+\subsection{Integer exponents up to $32$}\label{sec:search}
+
+When not all three binomials vanish at the root, nothing is known that excludes $M=8$ or $M=9$. The following
+computation covers small exponents.
+
+\begin{proposition}\label{prop:search}
+Let $g_0,g_1,g_2$ be real polynomials with at most two monomials each and all exponents in $[0,32]$. If
+$g_0^3+g_1^3+g_2^3\ne0$, every positive root of it has order at most $7$.
+\end{proposition}
+
+This was established by computer, as follows; it is not a Lean proof.
+
+\emph{Reductions.} After rescaling $x$ the root is $x=1$. Subtracting the smallest exponent $m$ of the three inputs
+from all their exponents divides the sum by $x^{3m}$ and does not change the order of a positive root, so one may
+assume that the smallest exponent is $0$. A nonzero sum with a root of order at least $8$ has at least nine
+distinct exponents by Lemma~\ref{lem:hajos}. Hence at least two inputs have two monomials, since otherwise the sum
+has at most six. An input with one monomial, or the zero polynomial, is written as
+$Ax^{a}+Bx^{b}$ with $a<b$ and $A$ or $B$ equal to zero. Two inputs with the same pair of exponents give at most
+eight exponents, so the three pairs $(a_i,b_i)$ may be assumed distinct.
+
+\emph{Equations.} Let $g_i=A_ix^{a_i}+B_ix^{b_i}$ with integers $0\le a_i<b_i\le32$. The cube $g_i^3$ has the
+exponents $y_{i,j}=3a_i+j(b_i-a_i)$ and coefficients $h_{i,j}=\binom3jA_i^{3-j}B_i^{j}$, $j=0,\dots,3$. A real
+quadruple $(h_0,h_1,h_2,h_3)$ has this form for some real $A,B$ if and only if
+\begin{equation}\label{eq:cone}
+h_1^2=3h_0h_2,\qquad h_2^2=3h_1h_3,\qquad h_1h_2=9h_0h_3 ,
+\end{equation}
+and the sum has a root of order at least $8$ at $1$ if and only if $\sum_{i,j}h_{i,j}\,y_{i,j}^{\,n}=0$ for
+$n=0,\dots,7$. Since nine distinct exponents are needed, the number of coincidences among the twelve numbers
+$y_{i,j}$ is at most three.
+
+\emph{The main case.} Fix the exponents, and suppose that $g_P$ has two monomials; normalize $A_P=1$ and write
+$z=B_P\ne0$. Suppose that the eight exponents of the two other cubes are distinct. Then the eight linear equations
+determine their eight coefficients as cubic polynomials in $z$ with rational coefficients, by Lagrange
+interpolation, and \eqref{eq:cone} for the two cubes becomes a system of six polynomial equations of degree at most
+$6$ in $z$. A solution exists if and only if these six polynomials have a common real root $z\ne0$. The program
+first computes a greatest common divisor of two of them modulo a prime that does not divide a leading coefficient;
+if it is constant there is no common root. Otherwise it computes the greatest common divisor of all six over the
+rationals and looks for a real root.
+
+Call two cubes \emph{linked} if they share an exponent. If no two cubes are linked, the procedure is applied with
+$P=0$ and with $P=1$. If exactly one pair is linked, it is applied with each cube of that pair as $P$. In both
+cases two choices of $P$ are tried, and since at least two of the three inputs have two monomials, one of the
+choices is an input with two monomials. If exactly two pairs are linked, the procedure is applied with their common
+cube as $P$; in the remaining case this cube is a monomial, the sum has exactly nine exponents $e_1,\dots,e_9$,
+its coefficient vector is proportional to $\bigl(\prod_{i\ne j}(e_j-e_i)^{-1}\bigr)_j$, and \eqref{eq:cone} is tested
+on these numbers.
+
+\emph{Three linked pairs.} Then there are at least two choices of $P$ for which the two other cubes share exactly one
+exponent. Indeed, there are at most three coincidences, each pair of cubes accounts for at least one, and an
+exponent common to all three cubes accounts for two; so at most one pair of cubes shares two exponents. As before,
+one of these choices of $P$ is an input with two monomials. For such $P$ the two other cubes have seven distinct
+exponents $E$. The equations $n=0,\dots,6$ determine the seven coefficients of their sum as cubic polynomials in
+$z$, and the equation $n=7$ becomes $\sum_j\binom3jW(y_{P,j})z^j=0$ with $W(y)=\prod_{e\in E}(y-e)$. For each real
+root $z\ne0$ of this cubic the coefficients of the two cubes are known except for the way the coefficient at the
+shared exponent splits between them. The roots are isolated exactly, and the equations \eqref{eq:cone} are then
+evaluated in interval arithmetic with rigorous error bounds. The program rejects a candidate when an equation that
+does not involve the split, or an equation evaluated at the split determined by another one, has an enclosure
+that excludes $0$. It reports a candidate that it can neither reject nor determine. None was reported.
+
+\emph{Result.} For exponents in $[0,32]$ there are $4\,179\,296$ unordered triples of distinct exponent pairs with
+smallest exponent $0$; this is also the number of triples in maxkieff's search. Table~\ref{tab:search} gives their
+distribution. No triple admits a solution. The programs, their complete output and the versions of the software
+are included with this note. During the review of this note the whole computation was repeated with an independent
+program that works modulo a prime and uses neither the rational greatest common divisors nor the interval
+arithmetic above; it gave the same counts and no solution. The first program was also run in floating-point arithmetic on the
+real-exponent examples of Proposition~\ref{prop:family} with $(p,q)=(1,2)$ and $(1,1)$, where the six polynomials
+vanish at $z=-1$ to the working precision, as they must. This tests the formulas, not the exact procedure.
+
+\begin{table}[ht]\centering\small
+\begin{tabular}{|l|r|}
+\hline
+fewer than nine distinct exponents (nothing to check) & $3\,787$\\\hline
+no linked pair & $2\,145\,738$\\\hline
+one linked pair & $1\,673\,517$\\\hline
+two linked pairs & $294\,861$\\\hline
+three linked pairs & $61\,393$\\\hline
+total & $4\,179\,296$\\\hline
+\end{tabular}
+\caption{The exponent triples of the computation behind Proposition~\ref{prop:search}.}\label{tab:search}
+\end{table}
+
+\section{Products of sparse polynomials}\label{sec:products}
+
+If $f$ and $g$ are $t$-nomials and $fg+1$ is not the zero polynomial, it has at most $t^2+1$ monomials and hence
+at most $t^2$ positive roots. It is an open question, attributed to Chattopadhyay in \cite{GKPS}, whether the true
+maximum is linear in $t$; in 2020 no upper bound of smaller order than $t^2$ and no family of examples with more
+than linearly many roots was known \cite{JPSZ}. The files of \row{261}, \row{263} and \row{265} give $8$, $11$ and
+$12$ positive roots for $t=3,4,5$, against the bounds $9$, $16$ and $25$. The example of hedanbaomi for trinomials
+is
+\begin{align*}
+f&=x^{46227877}-0.043365112862\,x^{448900690055}+0.001397048929\,x^{987294467927},\\
+g&=-1.000331817298-0.043584165131\,x^{454650486655}+0.000109442842\,x^{1454650486655}.
+\end{align*}
+The ten coefficients of $fg+1$ have the signs $+-+-+--+-+$ in order of increasing degree, with eight changes, so
+this polynomial has exactly eight positive roots. All of them lie within $3\cdot10^{-12}$ of $1$; in the variable
+$10^{12}\log x$ this is an exponential sum with exponents of size $1$ which is close to the degenerate case $f=1$,
+$g=-1$. The method of proof of \row{261}, interval arithmetic in fixed-point numbers with a sign evaluation at nine
+points, is reused in most of the other files. Whether $fg+1$ can have nine positive roots for trinomials $f,g$ is
+open. A numerical search for such an example, with the method of Appendix~\ref{sec:found}, did not find one and
+does not support a conclusion either way.
+
+If $fg+1$ has $r$ distinct positive roots, then $f(x^2)g(x^2)+1$ has at least $2r$ distinct real roots, and
+$f(x^2)$, $g(x^2)$ have as many monomials as $f$, $g$. So the three files just mentioned also give at least $16$,
+$22$ and $24$ real roots for $t=3,4,5$. The files of \row{267}, \row{269} and \row{271} give $8$, $13$ and $15$ real roots by other
+examples. That of \row{267} (BastianMIllan) is $f=x^4-65x^2$, $g=\tfrac{1}{50176}(x^4-65x^2+848)$, for which
+$fg+1=\tfrac1{50176}(x^2-1)(x^2-16)(x^2-49)(x^2-64)$. For $pq-rs$ with four $4$-nomials there are at most $32$
+monomials, hence at most $31$ positive roots if the polynomial is not zero, and the file of \row{273}
+(SemyonOsadchii) exhibits $23$.
+
+\section{Context}\label{sec:context}
+
+Koiran's real $\tau$-conjecture \cite[Conjecture~3]{Koiran} states that a nonzero polynomial
+$\sum_{i=1}^k\prod_{j=1}^m f_{ij}$ with real $t$-nomials $f_{ij}$ has at most polynomially many real roots in
+$kmt$. Koiran shows that it implies that the permanent has no constant-free arithmetic circuits of polynomial size
+and polynomially bounded formal degree. Expanding the products and applying the rule of signs gives the bound
+$2kt^m-1$, which is polynomial for fixed $m$. The conjecture is therefore about growing $m$; it is open already for
+$k=2$ \cite{Koiran,GKPS,Burgisser}. In the families of this note $m\le3$, and the results have no bearing on
+whether the conjecture is true. They determine exact values in the smallest cases. Their content is that for cubes
+of binomials the bound from the number of monomials is attained as soon as there are three summands, although it
+is far from attained for two (Proposition~\ref{prop:two}), and that it is not attained for multiplicities
+(\row{234}).
+
+Bounds for sums of powers of sparse polynomials that do not depend on the exponents of the powers were proved by
+Grenet, Koiran, Portier and Strozecki \cite{GKPS}, and by Koiran, Portier and Tavenas \cite{KPT} using Wronskians
+as in \cite{VvdP}. For three cubes of binomials the bound of \cite[Theorem~12]{KPT} is about $8\cdot10^{12}$, far
+above the eleven given by expansion. Since it does not depend on the power, it becomes smaller than the expansion
+bound $3r+2$ for sums of three $r$-th powers of binomials when $r$ is very large. Dutta, Saxena and Thierauf
+\cite{DST} relate representations of univariate polynomials as sums of few squares or cubes of sparse polynomials
+to circuit lower bounds and identity testing, and Dutta \cite{Dutta} proves the bound for two cubes quoted after
+Proposition~\ref{prop:two} and formulates conjectures for more summands. When all the binomials have the same two
+exponents, as for sums of cubes of linear forms, the sum has at most four monomials and there is nothing to
+prove. Classical results on sums of powers of linear forms, such as Sylvester's theorem \cite{Reznick}, concern
+that situation and do not apply to binomials with different exponents.
+
+For multiplicities, Hrube\v{s} \cite{Hrubes} shows that the real $\tau$-conjecture is equivalent to a version that
+counts nonzero real roots with multiplicity, and Koiran and Skomra \cite{KoiranSkomra} state a $\tau$-conjecture for
+multiplicities and ask for the order of a root of $fg+1$. No published upper bound for the order of a root of a sum
+of three cubes of binomials that improves on Lemma~\ref{lem:hajos} was found. Bihan, Dickenstein and Forsg\aa rd
+\cite{BDF} ask how the largest number of positive solutions and the largest local multiplicity are related for
+sparse systems with free coefficients; the family $\mathcal{S}_3$, whose coefficients are not free, has $11$
+against at most $9$. An exact result of a similar kind for another three-term family is due to Bihan and El Hilany
+\cite{BihanElHilany}: a plane curve defined by a trinomial meets a line in at most $11$ real points when the
+intersection is finite, and $11$ occurs.
+
+The functions $x^{e}$ with distinct real exponents form a Chebyshev system on $(0,\infty)$, which is the reason for
+Lemma~\ref{lem:descartes}; see \cite{KarlinStudden,PolyaSzego}. That theory describes the signomials with the
+maximal number of roots, but it does not say whether one of them is a sum of cubes of binomials, which is a
+nonlinear condition \eqref{eq:cone} on the coefficients.
+
+On 26 November 2026 arXiv, Crossref, zbMATH, MathOverflow, the citation lists of \cite{Koiran,KPT,Dutta} and the
+web were searched for real roots of sums of powers of sparse polynomials, the sharpness of the rule of signs in
+structured families, the $fg+1$ question, multiplicity bounds, and the specific polynomials above. No statement of
+Theorem~\ref{thm:three}, Theorem~\ref{thm:four}, Theorem~\ref{thm:main}, the bound of \row{234} or
+Proposition~\ref{prop:nine} was found. The sources
+\cite{AlbouyFu,BDF,BihanElHilany,Burgisser,Dutta,DST,GKPS,Hrubes,JPSZ,Koiran,KPT,KoiranSkomra,Lenstra,Reznick}
+were read; \cite{Hajos}, the 2026 journal version of \cite{Dutta}, and \cite{KarlinStudden,PolyaSzego,VvdP} were
+not, and are cited as standard references. This describes a search on that date and is not a claim of priority.
+
+The project's records describe the eighteen statements as small algebraic cases and do not mention the real
+$\tau$-conjecture; the connection made here is the reading of this note, and it is also made in notes of maxkieff.
+
+\section{Open questions}\label{sec:open}
+
+\begin{enumerate}\setlength{\itemsep}{1pt}
+\item Can a nonzero sum of three cubes of binomial polynomials have a positive root of order $8$ or $9$?
+\item Can $fg+1$ have nine positive roots for trinomials $f,g$?
+\item For three cubes of trinomials the known examples have $15$ positive roots and the rule of signs allows $29$.
+Lemma~\ref{lem:glue} gives only superadditivity in $k$. Is the bound from the number of monomials attained for
+cubes of $t$-nomials with $t\ge3$?
+\item For which $r$ does a signed sum of three $r$-th powers of binomials attain $3r+2$ positive roots?
+\end{enumerate}
+
+\appendix
+
+\section{The Lean statements and their verification}\label{sec:lean}
+
+Each statement of Table~\ref{tab:rows} is the declaration \lean{PEqualNP.Outside.L\_gct\_N}. Write
+\begin{center}
+$\Sigma_k$ for \lean{(Finset.univ : Finset (Fin k)).sum fun i => Polynomial.C (s i) * g i \^{} 3},\\[2pt]
+$\mathrm{pos}(P)$ for \lean{(P.roots.toFinset.filter (fun x : ℝ => 0 < x)).card},\qquad
+$\mathrm{all}(P)$ for \lean{P.roots.toFinset.card},
+\end{center}
+and $H_t$ for the hypotheses \lean{∀ i, s i = 1 ∨ s i = -1} and \lean{∀ i, (g i).support.card ≤ t}. In Mathlib the
+roots of the zero polynomial form the empty multiset, so the zero polynomial has no roots in these statements; the
+hypothesis \lean{support.card ≤ t} allows fewer than $t$ monomials.
+
+\begin{center}\footnotesize
+\begin{longtable}{|L{2.2cm}|L{7.4cm}|L{4.7cm}|}
+\hline
+\rowcolor{headgray}\textbf{name} & \textbf{statement} & \textbf{declaration that counts roots}\\\hline
+\endhead
+\row{234} & $\forall s\,g,\ H_2\to\Sigma_3\ne0\to\forall x,\ 0<x\to{}$\lean{rootMultiplicity x} $\Sigma_3\le9$ &
+\lean{SparseCubes.multiplicity\_bound}\\\hline
+\row{241} & $\neg\,(\forall s\,g,\ H_2\to\mathrm{pos}(\Sigma_3)\le9)$ & \lean{eleven\_pos\_roots}\\\hline
+\row{251}, 253, 255 & $\neg\,(\forall s\,g,\ H_2\to\mathrm{pos}(\Sigma_k)\le B)$ with
+$(k,B)=(4,13),(5,17),(6,21)$ & \lean{roots\_lower}, with \lean{count} $=14,19,23$\\\hline
+\row{243}, 245, 247, 249 & $\neg\,(\forall s\,g,\ H_t\to\mathrm{pos}(\Sigma_3)\le B)$ with
+$(t,B)=(3,14),(4,21),(5,26),(6,33)$ & \lean{roots\_lower}, with \lean{count} $=15,23,27,35$\\\hline
+\row{257}, 259 & $\neg\,(\forall s\,g,\ H_t\to\mathrm{all}(\Sigma_3)\le B)$ with $(t,B)=(2,19),(3,29)$ &
+\lean{roots\_even\_lower}, giving $2\cdot11$ and $2\cdot15$\\\hline
+\row{261}, 263, 265 & $\neg\,(\forall f\,g,\ $supports${}\le t\to\mathrm{pos}(fg+1)\le B)$ with
+$(t,B)=(3,7),(4,10),(5,11)$ & \lean{eightRoots}; \lean{roots\_lower}, with \lean{count} $=11,12$\\\hline
+\row{267}, 269, 271 & $\neg\,(\forall f\,g,\ $supports${}\le t\to\mathrm{all}(fg+1)\le B)$ with
+$(t,B)=(3,7),(4,12),(5,14)$ & \lean{sub\_roots}; \lean{main}; \lean{exists\_roots}\\\hline
+\row{273} & $\neg\,(\forall p\,q\,r\,s,\ $supports${}\le4\to\mathrm{pos}(pq-rs)\le22)$ & \lean{roots\_lower}, with
+\lean{count} $=23$\\\hline
+\end{longtable}
+\end{center}
+
+Most files evaluate the polynomial at rational points by fixed-point interval arithmetic with outward rounding,
+executed by the Lean kernel, and apply the intermediate value theorem; this method was introduced in the file of
+\row{261} by hedanbaomi. The file of \row{241} evaluates at the algebraic points of Theorem~\ref{thm:three} through
+rational enclosures. The file of \row{267} verifies eight explicit integer roots; that of \row{269} combines twelve
+sign changes between rational sample points with the root $0$; that of \row{271} uses fifteen sign changes between
+consecutive half-integers. The files of \row{257} and \row{259} obtain real roots from positive roots of an even
+polynomial.
+
+Apart from \row{234}, the files prove lower bounds. Mathlib contains the rule of signs for polynomials
+(\lean{Polynomial.roots\_countP\_pos\_le\_signVariations}), but none of the files uses it, and the upper bounds and
+exact values for the number of roots stated in this note are not formalized. A Lean proof of
+Theorem~\ref{thm:main} would in addition need Lemma~\ref{lem:glue}.
+
+For this note the eighteen files were compiled with Lean~4.36.0 and the Mathlib version fixed by the repository,
+after removing the line \lean{import PEqualNP.Defs} where present, so that only Mathlib is imported. All compile,
+and \lean{\#print axioms} lists \lean{propext}, \lean{Classical.choice} and \lean{Quot.sound} for each of the
+eighteen theorems. The state of the repository was commit \texttt{ff9577c}.
+
+Three Lean files accompany this note. \lean{FourCubes15.lean} proves
+\begin{center}
+$\neg\,(\forall s\,g,\ H_2\to\mathrm{pos}(\Sigma_4)\le14)$
+\end{center}
+with the polynomial of Theorem~\ref{thm:four}, and \lean{FiveCubes19.lean} proves the same with $\Sigma_5$ and $18$
+for Example~\ref{ex:five}. Their proofs reuse without change the interval arithmetic and the counting argument of
+the file of \row{251} (k-sandhu, after hedanbaomi); only the polynomial, the sample points and the expanded
+coefficients are new. Both import Mathlib only. \lean{RealExponentMoments.lean} contains the step of
+Proposition~\ref{prop:real}: for real exponents and nonzero coefficients, if the sums $T_n(t)$ vanish for $n\le9$
+and all $t$, then for some $t_0$ they vanish for all $n$. It imports the file of \row{234}. The three files compile
+with the same versions and depend on the same three axioms. They were not submitted to the project's own checking
+service, which accepts posted statements only.
+
+The supplementary directory contains the three Lean files, a program that evaluates the polynomials of
+Theorem~\ref{thm:four} and Example~\ref{ex:five} in exact rational arithmetic at the rational points stored in
+their certificates (the sixteen points of Theorem~\ref{thm:four} are those printed above), the programs for
+Propositions \ref{prop:nine}, \ref{prop:family} and \ref{prop:search} with their output, a script that repeats the
+compilation of the Lean files, and a record of the reviews of the note.
+
+\section{How the new examples were found}\label{sec:found}
+
+The examples of Theorem~\ref{thm:four} and Example~\ref{ex:five} were found numerically; their proofs do not depend
+on how. A signomial with $n+1$ given exponents and $n$ given simple positive roots is unique up to a constant
+factor. For a sum of $k$ cubes of binomials the $4k$ exponents are determined by the $2k$ exponents of the
+binomials. Taking these and $4k-1$ roots as unknowns, one computes the coefficient vector by solving a linear
+system and asks that the four coefficients of each cube satisfy \eqref{eq:cone}. This is a nonlinear system with
+more unknowns than equations, which was solved by least squares from random starting points. The search was
+restricted to polynomials with the symmetry \eqref{eq:anti}: the binomials come in pairs $g(x)$,
+$-x^{N}g(1/x)$, possibly with binomials $c\,(x^{N/2+m}-x^{N/2-m})$, and then only half of the roots are unknown.
+For $k=4$ solutions were found with two pairs, and for $k=5$ with two pairs and one further binomial. A numerical
+solution was made exact by rounding the exponents to rational numbers with a common denominator, solving again
+with these exponents, rounding the coefficients, and checking the signs in exact arithmetic. Since the roots are
+simple, small changes of the parameters do not destroy them.
+
+\section*{Credits}
+The statements of Table~\ref{tab:rows} were posted by the PEqualNP project. The accepted proofs were submitted by
+Aargau, BastianMIllan, blarneys, gcq, hedanbaomi, junyeopYim, k-sandhu, SemyonOsadchii and XXXLUMI, as listed in the
+table; some of these submissions record the assistance of AI systems. An earlier pull request for \row{234} by
+williamzheng0711 (\#23279) was closed without being accepted. The example of XXXLUMI in Theorem~\ref{thm:three} is
+the starting point of the later files on cubes, and the interval arithmetic of hedanbaomi is used in most of them
+and in two files of this note. The example of order $7$, the bound for binomials with a common root, part~(i) of
+Proposition~\ref{prop:family} and the descent modulo $5$ are due to maxkieff, and the obstruction for three
+consecutive unshared exponents is due to silentoplayz. The algebra behind Proposition~\ref{prop:real} is Aargau's.
+The remaining statements of Sections \ref{sec:more} and \ref{sec:mult} are those listed as (a) to (d) in the
+introduction.
+
+\begin{thebibliography}{99}\small
+\bibitem{AlbouyFu} A.~Albouy and Y.~Fu, Some remarks about Descartes' rule of signs, \emph{Elem.\ Math.}\ 69 (2014)
+186--194. arXiv:1307.6842.
+\bibitem{BDF} F.~Bihan, A.~Dickenstein and J.~Forsg\aa rd, Sparse systems with high local multiplicity,
+\emph{J.\ London Math.\ Soc.}\ (2) 111 (2025), no.~3, e70106. arXiv:2402.08410.
+\bibitem{BihanElHilany} F.~Bihan and B.~El Hilany, A sharp bound on the number of real intersection points of a
+sparse plane curve with a line, \emph{J.\ Symbolic Comput.}\ 81 (2017) 88--96. arXiv:1506.03309.
+\bibitem{Burgisser} P.~B\"urgisser, Completeness classes in algebraic complexity theory, arXiv:2406.06217 (2024).
+\bibitem{Dutta} P.~Dutta, Real $\tau$-conjecture for sum-of-squares: a unified approach to lower bound and
+derandomization, in: \emph{CSR 2021}, Lecture Notes in Comput.\ Sci., Springer, 2021, pp.~78--101. Journal version:
+\emph{Theory Comput.\ Syst.}\ 70 (2026), article 52.
+\bibitem{DST} P.~Dutta, N.~Saxena and T.~Thierauf, A largish sum-of-squares implies circuit hardness and
+derandomization, in: \emph{ITCS 2021}, LIPIcs 185, 23:1--23:21. Journal version: \emph{comput.\ complexity} 33
+(2024), article~3.
+\bibitem{GKPS} B.~Grenet, P.~Koiran, N.~Portier and Y.~Strozecki, The limited power of powering: polynomial
+identity testing and a depth-four lower bound for the permanent, in: \emph{FSTTCS 2011}, LIPIcs,
+doi:10.4230/LIPIcs.FSTTCS.2011.127. arXiv:1107.1434.
+\bibitem{Hajos} G.~Haj\'os, [Solution to problem 41] (in Hungarian), \emph{Mat.\ Lapok} 4 (1953) 40--41. Cited after
+\cite{Lenstra,KoiranSkomra}.
+\bibitem{Hrubes} P.~Hrube\v{s}, On the real $\tau$-conjecture and the distribution of complex roots, \emph{Theory
+Comput.}\ 9 (2013) 403--411.
+\bibitem{JPSZ} G.~Jindal, A.~Pandey, H.~Shukla and C.~Zisopoulos, How many zeros of a random sparse polynomial are
+real?, in: \emph{ISSAC 2020}, 273--280. arXiv:1911.02540.
+\bibitem{KarlinStudden} S.~Karlin and W.~J.~Studden, \emph{Tchebycheff Systems: With Applications in Analysis and
+Statistics}, Interscience, 1966.
+\bibitem{Koiran} P.~Koiran, Shallow circuits with high-powered inputs, in: \emph{Innovations in Computer Science
+(ICS 2011)}, Tsinghua University Press, 309--320. arXiv:1004.4960.
+\bibitem{KPT} P.~Koiran, N.~Portier and S.~Tavenas, A Wronskian approach to the real $\tau$-conjecture,
+\emph{J.\ Symbolic Comput.}\ 68 (2015) 195--214. arXiv:1205.1015.
+\bibitem{KoiranSkomra} P.~Koiran and M.~Skomra, Intersection multiplicity of a sparse curve and a low-degree curve,
+\emph{J.\ Pure Appl.\ Algebra} 224 (2020) 106279. arXiv:1904.00702.
+\bibitem{Lenstra} H.~W.~Lenstra, Jr., Finding small degree factors of lacunary polynomials, in: \emph{Number Theory
+in Progress}, Vol.~1 (Zakopane--Ko\'scielisko, 1997), de Gruyter, 1999, 267--276.
+\bibitem{PolyaSzego} G.~P\'olya and G.~Szeg\H{o}, \emph{Problems and Theorems in Analysis II}, Springer, 1976, Part
+Five.
+\bibitem{Reznick} B.~Reznick, On the length of binary forms, in: \emph{Quadratic and Higher Degree Forms},
+Dev.\ Math.\ 31, Springer, 2013, 207--232. arXiv:1007.5485.
+\bibitem{VvdP} M.~Voorhoeve and A.~J.~van der Poorten, Wronskian determinants and the zeros of certain functions,
+\emph{Indag.\ Math.}\ 78 (1975) 417--424.
+\end{thebibliography}
+
+\end{document}
